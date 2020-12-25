@@ -1,0 +1,7 @@
+resolver: lts-16.26
+packages:
+- .
+
+extra-deps:
+  - github: turnage/hinotify
+    commit: "f215e183bbf3ea2aecf3000c87318fb9cef357dd"
