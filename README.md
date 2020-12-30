@@ -19,7 +19,7 @@ To re-run a Rust crate whenever a rust source file changes:
 To convert pngs to gifs whenever they appear or change in only the top level of
 a watched directory:
 
-````inveterate --select ^[^/].png$ --substitute %i% <dir> "test -e %i% && convert %i% $(basename %i%.gif)"````
+````inveterate --select ^[^/]+.png$ --substitute %i% <dir> "test -e %i% && convert %i% $(basename %i%.gif)"````
 
 To kill and re-launch a web server whenever a source file changes, while you're
 editing with `Vim`:
