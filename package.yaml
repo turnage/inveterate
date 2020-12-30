@@ -38,6 +38,7 @@ dependencies:
 - regex-tdfa
 - utf8-string
 - stringsearch
+- hashtables
 
 library:
   source-dirs: src
