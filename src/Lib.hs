@@ -8,7 +8,7 @@ import Control.Applicative ((<*>))
 import Control.Concurrent (forkIO, threadDelay)
 import Control.Concurrent.STM.TChan
 import Control.Exception (bracket)
-import Control.Monad (filterM, fmap, forever, mapM)
+import Control.Monad (filterM, fmap, forM_, forever, mapM)
 import Data.ByteString (ByteString)
 import Data.ByteString.Builder (stringUtf8, toLazyByteString)
 import Data.ByteString.Lazy (toStrict)
@@ -128,10 +128,13 @@ watchHandler watchSet@(WatchSet descriptors inotify process) watchDir onChange r
 
 addWatch :: WatchSet -> (ByteString -> IO ()) -> ByteString -> IO ()
 addWatch watchSet@(WatchSet descriptors inotify process) onChange path = do
-  watch <-
-    INotify.addWatch inotify eventsOfInterest path $
-    watchHandler watchSet path onChange
-  H.insert descriptors path watch
+  paths <- enumerateWatchPaths path
+  let watchPath path = do
+        watch <-
+          INotify.addWatch inotify eventsOfInterest path $
+          watchHandler watchSet path onChange
+        H.insert descriptors path watch
+  forM_ paths watchPath
 
 inveterateMain :: ParsedInvocation -> IO ()
 inveterateMain (ParsedInvocation {arguments = Arguments {..}, ..}) =
@@ -144,7 +147,7 @@ inveterateMain (ParsedInvocation {arguments = Arguments {..}, ..}) =
         then Single
         else None
     let onChange path = spinCommandTurnstyle commandTurnstyle path
-    enumerateWatchPaths path >>= mapM (addWatch watchSet onChange)
+    addWatch watchSet onChange path
     forever $ threadDelay $ (floor (10.0 ** 5.0)) * 60
 
 data Event
@@ -173,6 +176,10 @@ processEvent rawEvent =
             then Just AddWatch
             else Just Execute
         INotify.Modified {isDirectory, ..} ->
+          if isDirectory
+            then Nothing
+            else Just Execute
+        INotify.Deleted {isDirectory, ..} ->
           if isDirectory
             then Nothing
             else Just Execute
